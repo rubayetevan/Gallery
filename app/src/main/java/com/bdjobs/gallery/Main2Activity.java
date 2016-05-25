@@ -7,6 +7,7 @@ import android.os.Environment;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.ImageView;
 import android.widget.Toast;
@@ -80,16 +81,24 @@ public class Main2Activity extends AppCompatActivity {
 
     private void SaveImage(Bitmap finalBitmap) {
 
-       /* String root = Environment.getExternalStorageDirectory().toString();
-        File myDir = new File(root + "/saved_images");
-        myDir.mkdirs();*/
+
         Random generator = new Random();
         int n = 10000;
         n = generator.nextInt(n);
-        String fname = "Image-"+ n +".jpg";
+        String fname = "Image-"+ n;
 
-        File path = Environment.getExternalStoragePublicDirectory(
-                Environment.DIRECTORY_PICTURES);
+       /* File path = new File(Environment.getExternalStoragePublicDirectory(
+                Environment.DIRECTORY_PICTURES), "wallpaper");*/
+        String loc = Environment.getExternalStorageDirectory().toString()
+                + "/Evan";
+        File path = new File(loc);
+        path.mkdirs();
+
+        if (!path.mkdirs()) {
+           System.out.println("Directory not created");
+        }
+
+
         File file = new File(path, fname +".jpg");
 
         if (file.exists ()) file.delete ();
