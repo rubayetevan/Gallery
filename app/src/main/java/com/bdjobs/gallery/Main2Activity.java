@@ -1,9 +1,14 @@
 package com.bdjobs.gallery;
 
+import android.app.ProgressDialog;
+import android.app.WallpaperManager;
 import android.content.Intent;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Environment;
+import android.provider.MediaStore;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -16,6 +21,7 @@ import com.bumptech.glide.Glide;
 
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.util.Random;
 import java.util.concurrent.ExecutionException;
 
@@ -23,6 +29,9 @@ public class Main2Activity extends AppCompatActivity {
     ImageView imageView;
     String link;
     Bitmap theBitmap;
+    String loc;
+    String fname="";
+    private ProgressDialog progress;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -33,8 +42,6 @@ public class Main2Activity extends AppCompatActivity {
         imageView = (ImageView) findViewById(R.id.imgD);
         Intent intent = getIntent();
         link = intent.getStringExtra("link");
-
-
         Glide.with(this).load(link).into(imageView);
 
     }
@@ -47,6 +54,18 @@ public class Main2Activity extends AppCompatActivity {
 
     }
 
+    public void OnClickSetWallpaper(View view)
+    {
+        if (fname.matches(""))
+        {
+            Toast.makeText(Main2Activity.this, "You should download the wallpaper first!", Toast.LENGTH_SHORT).show();
+        }
+        else {
+            new SetWallpaper().execute();
+        }
+
+    }
+
     private  class ImageDownload extends AsyncTask<Void, Void, Void>{
 
         @Override
@@ -56,7 +75,7 @@ public class Main2Activity extends AppCompatActivity {
                         with(Main2Activity.this).
                         load(link).
                         asBitmap().
-                        into(320,640). // Width and height
+                        into(-1,-1). // Width and height
                         get();
             } catch (InterruptedException e) {
                 e.printStackTrace();
@@ -70,26 +89,31 @@ public class Main2Activity extends AppCompatActivity {
         @Override
         protected void onPostExecute(Void aVoid) {
             super.onPostExecute(aVoid);
+            progress.dismiss();
             Toast.makeText(Main2Activity.this, "Downloaded", Toast.LENGTH_SHORT).show();
         }
 
         @Override
         protected void onPreExecute() {
+            progress=new ProgressDialog(Main2Activity.this);
+            progress.setTitle("Please wait!");
+            progress.setMessage("Downloading Waallpaper");
+            progress.setProgressStyle(ProgressDialog.STYLE_SPINNER);
+            progress.setCancelable(false);
+            progress.show();
 
         }
     }
 
     private void SaveImage(Bitmap finalBitmap) {
-
-
         Random generator = new Random();
         int n = 10000;
         n = generator.nextInt(n);
-        String fname = "Image-"+ n;
+        fname = "Image-"+ n;
 
        /* File path = new File(Environment.getExternalStoragePublicDirectory(
                 Environment.DIRECTORY_PICTURES), "wallpaper");*/
-        String loc = Environment.getExternalStorageDirectory().toString()
+        loc = Environment.getExternalStorageDirectory().toString()
                 + "/Evan";
         File path = new File(loc);
         path.mkdirs();
@@ -106,12 +130,51 @@ public class Main2Activity extends AppCompatActivity {
             path.mkdirs();
 
             FileOutputStream out = new FileOutputStream(file);
-            finalBitmap.compress(Bitmap.CompressFormat.JPEG, 90, out);
+            finalBitmap.compress(Bitmap.CompressFormat.JPEG, 100, out);
             out.flush();
             out.close();
 
         } catch (Exception e) {
             e.printStackTrace();
+        }
+
+    }
+
+    private  class SetWallpaper extends AsyncTask<Void, Void, Void>{
+
+        @Override
+        protected Void doInBackground(Void... params) {
+
+            BitmapFactory.Options options = new BitmapFactory.Options();
+            options.inSampleSize = -1;
+            final Bitmap b = BitmapFactory.decodeFile(loc+"/"+fname+".jpg", options);
+            WallpaperManager myWallpaperManager
+                    = WallpaperManager.getInstance(getApplicationContext());
+            try {
+                myWallpaperManager.setBitmap(b);
+            } catch (IOException e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            }
+            return null;
+        }
+
+        @Override
+        protected void onPostExecute(Void aVoid) {
+            super.onPostExecute(aVoid);
+            progress.dismiss();
+            Toast.makeText(Main2Activity.this, "Wallpaper Changed Successfully", Toast.LENGTH_SHORT).show();
+        }
+
+        @Override
+        protected void onPreExecute() {
+            progress=new ProgressDialog(Main2Activity.this);
+            progress.setTitle("Please wait!");
+            progress.setMessage("Setting Wallpaper");
+            progress.setProgressStyle(ProgressDialog.STYLE_SPINNER);
+            progress.setCancelable(false);
+            progress.show();
+
         }
     }
 }

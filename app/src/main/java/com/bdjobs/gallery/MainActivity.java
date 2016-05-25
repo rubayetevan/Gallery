@@ -90,7 +90,10 @@ public class MainActivity extends AppCompatActivity {
                 holder.img = (ImageView) convertView.findViewById(R.id.imgv);
 
 
-            Glide.with(context).load(links.get(position)).into(holder.img);
+            Glide.with(context)
+                    .load(links.get(position))
+                    .override(200,200)
+                    .into(holder.img);
 
             final String ln = links.get(position);
 
