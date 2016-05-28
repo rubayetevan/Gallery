@@ -8,6 +8,8 @@ import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.animation.Animation;
+import android.view.animation.AnimationUtils;
 import android.widget.BaseAdapter;
 import android.widget.GridView;
 import android.widget.ImageView;
@@ -107,7 +109,7 @@ public class MainActivity extends AppCompatActivity {
                 }
             });
 
-
+            setAnimation(holder.img,position);
             return convertView;
         }
         public class Holder
@@ -115,5 +117,16 @@ public class MainActivity extends AppCompatActivity {
             TextView tv;
             ImageView img;
         }
+        private void setAnimation(View viewToAnimate, int position)
+        {
+            // If the bound view wasn't previously displayed on screen, it's animated
+
+            Animation animation = AnimationUtils.loadAnimation(context, R.anim.slide_up);
+            viewToAnimate.startAnimation(animation);
+            //lastPosition = position;
+
+        }
+
+
     }
 }

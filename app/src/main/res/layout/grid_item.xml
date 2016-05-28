@@ -4,9 +4,11 @@
     android:elevation="6dp"
     android:scaleType="centerCrop"
     android:id="@+id/imgv"
+    android:clickable="true"
+    android:stateListAnimator="@anim/lift_on_touch"
     xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:gravity="center"
     android:textColor="#afff"
-    android:background="#f06292"/>
+    android:background="@drawable/ic_3d_rotation_black_24dp"/>

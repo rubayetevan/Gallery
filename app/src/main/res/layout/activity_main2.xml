@@ -12,42 +12,22 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent" />
 
-    <LinearLayout
-        android:elevation="10dp"
-        android:layout_width="match_parent"
-        android:layout_height="60dp"
-        android:layout_gravity="bottom"
-        android:background="@drawable/gradient"
-        android:orientation="horizontal">
 
         <Button
-            android:onClick="OnClickSetWallpaper"
-            android:layout_margin="3dp"
-            android:background="@drawable/oval_ripple"
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_gravity="center"
-            android:layout_weight="1"
-            android:fontFamily="sans-serif"
-            android:gravity="center"
-            android:text="Set as Wallpaper"
-            android:textColor="@android:color/black"
-            android:textSize="16sp" />
 
-        <Button
+            android:id="@+id/downloadBTN"
             android:onClick="OnClickDownload"
             android:layout_margin="3dp"
             android:background="@drawable/oval_ripple"
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_gravity="center"
-            android:layout_weight="1"
-            android:fontFamily="sans-serif"
+            android:layout_width="match_parent"
+            android:layout_height="50dp"
+            android:layout_gravity="bottom"
+            android:fontFamily="serif"
             android:gravity="center"
-            android:text="Download"
+            android:textStyle="bold"
+            android:text="Download Wallpaper"
             android:textColor="@android:color/black"
             android:textSize="16sp" />
 
-    </LinearLayout>
 
 </FrameLayout>

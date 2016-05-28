@@ -1,19 +1,23 @@
 package com.bdjobs.gallery;
 
+import android.Manifest;
 import android.app.ProgressDialog;
 import android.app.WallpaperManager;
+import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Environment;
-import android.provider.MediaStore;
+import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.ContextCompat;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.View;
+import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.Toast;
 
@@ -32,6 +36,8 @@ public class Main2Activity extends AppCompatActivity {
     String loc;
     String fname="";
     private ProgressDialog progress;
+    Button button;
+    final int MY_PERMISSIONS_REQUEST_WRITE_EXTERNAL_STORAGE = 1;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -40,18 +46,102 @@ public class Main2Activity extends AppCompatActivity {
         ActionBar actionBar = getSupportActionBar();
         actionBar.hide();
         imageView = (ImageView) findViewById(R.id.imgD);
+        button= (Button) findViewById(R.id.downloadBTN);
         Intent intent = getIntent();
         link = intent.getStringExtra("link");
         Glide.with(this).load(link).into(imageView);
+        Rqpr();
+        SharedPreferences sharedPref = this.getPreferences(Context.MODE_PRIVATE);
+        String permission = sharedPref.getString("permission","0");
+        if(permission.matches("permission_denied"))
+        {
+            button.setVisibility(View.INVISIBLE);
+        }
+        else if(permission.matches("permission_granted"))
+        {
+            button.setVisibility(View.VISIBLE);
+        }
 
+
+    }
+
+    private void Rqpr() {
+        if (ContextCompat.checkSelfPermission(Main2Activity.this,
+                Manifest.permission.WRITE_EXTERNAL_STORAGE)
+                != PackageManager.PERMISSION_GRANTED) {
+
+            // Should we show an explanation?
+            if (ActivityCompat.shouldShowRequestPermissionRationale(Main2Activity.this,
+                    Manifest.permission.WRITE_EXTERNAL_STORAGE)) {
+
+                // Show an expanation to the user *asynchronously* -- don't block
+                // this thread waiting for the user's response! After the user
+                // sees the explanation, try again to request the permission.
+
+            } else {
+
+                // No explanation needed, we can request the permission.
+
+                ActivityCompat.requestPermissions(Main2Activity.this,
+                        new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE},
+                        MY_PERMISSIONS_REQUEST_WRITE_EXTERNAL_STORAGE);
+
+                // MY_PERMISSIONS_REQUEST_WRITE_EXTERNAL_STORAGE is an
+                // app-defined int constant. The callback method gets the
+                // result of the request.
+            }
+
+        }
     }
 
     public void OnClickDownload(View view)
     {
+        Rqpr();
+        String condition = button.getText().toString();
+        if(condition.matches("Download Wallpaper"))
+        {
+            new ImageDownload().execute();
+        }
+        else if (condition.matches("Set as Wallpaper"))
+        {
+            new SetWallpaper().execute();
+        }
 
-        new ImageDownload().execute();
+    }
 
+    @Override
+    public void onRequestPermissionsResult(int requestCode,
+                                           String permissions[], int[] grantResults) {
+        switch (requestCode) {
+            case MY_PERMISSIONS_REQUEST_WRITE_EXTERNAL_STORAGE: {
+                // If request is cancelled, the result arrays are empty.
+                if (grantResults.length > 0
+                        && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
 
+                    // permission was granted, yay! Do the
+                    // contacts-related task you need to do.
+                    SharedPreferences sharedPref = this.getPreferences(Context.MODE_PRIVATE);
+                    SharedPreferences.Editor editor = sharedPref.edit();
+                    editor.putString("permission","permission_granted");
+                    editor.commit();
+                    button.setVisibility(View.VISIBLE);
+
+                } else {
+
+                    SharedPreferences sharedPref = this.getPreferences(Context.MODE_PRIVATE);
+                    SharedPreferences.Editor editor = sharedPref.edit();
+                    editor.putString("permission","permission_denied");
+                    editor.commit();
+                    button.setVisibility(View.INVISIBLE);
+                    // permission denied, boo! Disable the
+                    // functionality that depends on this permission.
+                }
+                return;
+            }
+
+            // other 'case' lines to check for other
+            // permissions this app might request
+        }
     }
 
     public void OnClickSetWallpaper(View view)
@@ -83,6 +173,7 @@ public class Main2Activity extends AppCompatActivity {
                 e.printStackTrace();
             }
             SaveImage(theBitmap);
+
             return null;
         }
 
@@ -90,11 +181,16 @@ public class Main2Activity extends AppCompatActivity {
         protected void onPostExecute(Void aVoid) {
             super.onPostExecute(aVoid);
             progress.dismiss();
+            button.setText("Set as Wallpaper");
             Toast.makeText(Main2Activity.this, "Downloaded", Toast.LENGTH_SHORT).show();
         }
 
         @Override
         protected void onPreExecute() {
+            if(progress !=null)
+            {
+                progress = null;
+            }
             progress=new ProgressDialog(Main2Activity.this);
             progress.setTitle("Please wait!");
             progress.setMessage("Downloading Waallpaper");
@@ -110,6 +206,8 @@ public class Main2Activity extends AppCompatActivity {
         int n = 10000;
         n = generator.nextInt(n);
         fname = "Image-"+ n;
+
+        System.out.print("file name:"+fname);
 
        /* File path = new File(Environment.getExternalStoragePublicDirectory(
                 Environment.DIRECTORY_PICTURES), "wallpaper");*/
@@ -147,6 +245,7 @@ public class Main2Activity extends AppCompatActivity {
 
             BitmapFactory.Options options = new BitmapFactory.Options();
             options.inSampleSize = -1;
+            System.out.print("file name:"+fname);
             final Bitmap b = BitmapFactory.decodeFile(loc+"/"+fname+".jpg", options);
             WallpaperManager myWallpaperManager
                     = WallpaperManager.getInstance(getApplicationContext());
@@ -168,6 +267,10 @@ public class Main2Activity extends AppCompatActivity {
 
         @Override
         protected void onPreExecute() {
+            if(progress !=null)
+            {
+                progress = null;
+            }
             progress=new ProgressDialog(Main2Activity.this);
             progress.setTitle("Please wait!");
             progress.setMessage("Setting Wallpaper");
