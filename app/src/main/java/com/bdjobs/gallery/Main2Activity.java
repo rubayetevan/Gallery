@@ -1,21 +1,27 @@
 package com.bdjobs.gallery;
 
 import android.Manifest;
+import android.app.Dialog;
 import android.app.ProgressDialog;
 import android.app.WallpaperManager;
+import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
+import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Environment;
+import android.provider.MediaStore;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageView;
@@ -23,9 +29,14 @@ import android.widget.Toast;
 
 import com.bumptech.glide.Glide;
 
+import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.URL;
+import java.net.URLConnection;
 import java.util.Random;
 import java.util.concurrent.ExecutionException;
 
@@ -38,6 +49,10 @@ public class Main2Activity extends AppCompatActivity {
     private ProgressDialog progress;
     Button button;
     final int MY_PERMISSIONS_REQUEST_WRITE_EXTERNAL_STORAGE = 1;
+    private ProgressDialog pDialog;
+
+    // Progress dialog type (0 - for Horizontal progress bar)
+    public static final int progress_bar_type = 0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -63,6 +78,23 @@ public class Main2Activity extends AppCompatActivity {
         }
 
 
+    }
+
+    @Override
+    protected Dialog onCreateDialog(int id) {
+        switch (id) {
+            case progress_bar_type:
+                pDialog = new ProgressDialog(this);
+                pDialog.setMessage("Downloading file. Please wait...");
+                pDialog.setIndeterminate(false);
+                pDialog.setMax(100);
+                pDialog.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
+                pDialog.setCancelable(false);
+                pDialog.show();
+                return pDialog;
+            default:
+                return null;
+        }
     }
 
     private void Rqpr() {
@@ -94,24 +126,35 @@ public class Main2Activity extends AppCompatActivity {
         }
     }
 
-    public void OnClickDownload(View view)
-    {
+    public void OnClickDownload(View view) {
         Rqpr();
         String condition = button.getText().toString();
         if(condition.matches("Download Wallpaper"))
         {
-            new ImageDownload().execute();
+            //new ImageDownload().execute();
+            new DownloadFileFromURL().execute(link);
         }
         else if (condition.matches("Set as Wallpaper"))
         {
-            new SetWallpaper().execute();
+
+            String path = "/sdcard/downloadedfile.jpg";
+
+
+            Intent wall_intent =  new Intent(Intent.ACTION_ATTACH_DATA);
+            wall_intent.setDataAndType(getImageContentUri(Main2Activity.this,path), "image/*");
+            wall_intent.putExtra("mimeType", "image/*");
+            Intent chooserIntent = Intent.createChooser(wall_intent,
+                    "Set As");
+            chooserIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            this.startActivity(chooserIntent);
+
+
         }
 
     }
 
     @Override
-    public void onRequestPermissionsResult(int requestCode,
-                                           String permissions[], int[] grantResults) {
+    public void onRequestPermissionsResult(int requestCode,String permissions[], int[] grantResults) {
         switch (requestCode) {
             case MY_PERMISSIONS_REQUEST_WRITE_EXTERNAL_STORAGE: {
                 // If request is cancelled, the result arrays are empty.
@@ -141,63 +184,6 @@ public class Main2Activity extends AppCompatActivity {
 
             // other 'case' lines to check for other
             // permissions this app might request
-        }
-    }
-
-    public void OnClickSetWallpaper(View view)
-    {
-        if (fname.matches(""))
-        {
-            Toast.makeText(Main2Activity.this, "You should download the wallpaper first!", Toast.LENGTH_SHORT).show();
-        }
-        else {
-            new SetWallpaper().execute();
-        }
-
-    }
-
-    private  class ImageDownload extends AsyncTask<Void, Void, Void>{
-
-        @Override
-        protected Void doInBackground(Void... params) {
-            try {
-                theBitmap = Glide.
-                        with(Main2Activity.this).
-                        load(link).
-                        asBitmap().
-                        into(-1,-1). // Width and height
-                        get();
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            } catch (ExecutionException e) {
-                e.printStackTrace();
-            }
-            SaveImage(theBitmap);
-
-            return null;
-        }
-
-        @Override
-        protected void onPostExecute(Void aVoid) {
-            super.onPostExecute(aVoid);
-            progress.dismiss();
-            button.setText("Set as Wallpaper");
-            Toast.makeText(Main2Activity.this, "Downloaded", Toast.LENGTH_SHORT).show();
-        }
-
-        @Override
-        protected void onPreExecute() {
-            if(progress !=null)
-            {
-                progress = null;
-            }
-            progress=new ProgressDialog(Main2Activity.this);
-            progress.setTitle("Please wait!");
-            progress.setMessage("Downloading Waallpaper");
-            progress.setProgressStyle(ProgressDialog.STYLE_SPINNER);
-            progress.setCancelable(false);
-            progress.show();
-
         }
     }
 
@@ -238,46 +224,101 @@ public class Main2Activity extends AppCompatActivity {
 
     }
 
-    private  class SetWallpaper extends AsyncTask<Void, Void, Void>{
-
-        @Override
-        protected Void doInBackground(Void... params) {
-
-            BitmapFactory.Options options = new BitmapFactory.Options();
-            options.inSampleSize = -1;
-            System.out.print("file name:"+fname);
-            final Bitmap b = BitmapFactory.decodeFile(loc+"/"+fname+".jpg", options);
-            WallpaperManager myWallpaperManager
-                    = WallpaperManager.getInstance(getApplicationContext());
-            try {
-                myWallpaperManager.setBitmap(b);
-            } catch (IOException e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
-            }
-            return null;
-        }
-
-        @Override
-        protected void onPostExecute(Void aVoid) {
-            super.onPostExecute(aVoid);
-            progress.dismiss();
-            Toast.makeText(Main2Activity.this, "Wallpaper Changed Successfully", Toast.LENGTH_SHORT).show();
-        }
+    class DownloadFileFromURL extends AsyncTask<String, String, String> {
 
         @Override
         protected void onPreExecute() {
-            if(progress !=null)
-            {
-                progress = null;
-            }
-            progress=new ProgressDialog(Main2Activity.this);
-            progress.setTitle("Please wait!");
-            progress.setMessage("Setting Wallpaper");
-            progress.setProgressStyle(ProgressDialog.STYLE_SPINNER);
-            progress.setCancelable(false);
-            progress.show();
+            super.onPreExecute();
+            showDialog(progress_bar_type);
+        }
 
+        @Override
+        protected String doInBackground(String... f_url) {
+            int count;
+            try {
+                URL url = new URL(f_url[0]);
+                URLConnection conection = url.openConnection();
+                conection.connect();
+                // getting file length
+                int lenghtOfFile = conection.getContentLength();
+
+                // input stream to read file - with 8k buffer
+                InputStream input = new BufferedInputStream(url.openStream(), 8192);
+
+                // Output stream to write file
+                OutputStream output = new FileOutputStream("/sdcard/downloadedfile.jpg");
+
+                byte data[] = new byte[1024];
+
+                long total = 0;
+
+                while ((count = input.read(data)) != -1) {
+                    total += count;
+                    // publishing the progress....
+                    // After this onProgressUpdate will be called
+                    publishProgress(""+(int)((total*100)/lenghtOfFile));
+
+                    // writing data to file
+                    output.write(data, 0, count);
+                }
+
+                // flushing output
+                output.flush();
+
+                // closing streams
+                output.close();
+                input.close();
+
+            } catch (Exception e) {
+                Log.e("Error: ", e.getMessage());
+            }
+
+            return null;
+        }
+
+        /**
+         * Updating progress bar
+         * */
+        protected void onProgressUpdate(String... progress) {
+            // setting progress percentage
+            pDialog.setProgress(Integer.parseInt(progress[0]));
+        }
+
+        /**
+         * After completing background task
+         * Dismiss the progress dialog
+         * **/
+        @Override
+        protected void onPostExecute(String file_url) {
+            // dismiss the dialog after the file was downloaded
+            dismissDialog(progress_bar_type);
+            button.setText("Set as Wallpaper");
+            Toast.makeText(Main2Activity.this, "Downloaded", Toast.LENGTH_SHORT).show();
+
+        }
+
+    }
+
+    public static Uri getImageContentUri(Context context, String absPath) {
+        Log.v("URI", "getImageContentUri: " + absPath);
+
+        Cursor cursor = context.getContentResolver().query(
+                MediaStore.Images.Media.EXTERNAL_CONTENT_URI
+                , new String[] { MediaStore.Images.Media._ID }
+                , MediaStore.Images.Media.DATA + "=? "
+                , new String[] { absPath }, null);
+
+        if (cursor != null && cursor.moveToFirst()) {
+            int id = cursor.getInt(cursor.getColumnIndex(MediaStore.MediaColumns._ID));
+            return Uri.withAppendedPath(MediaStore.Images.Media.EXTERNAL_CONTENT_URI , Integer.toString(id));
+
+        } else if (!absPath.isEmpty()) {
+            ContentValues values = new ContentValues();
+            values.put(MediaStore.Images.Media.DATA, absPath);
+            return context.getContentResolver().insert(
+                    MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values);
+        } else {
+            return null;
         }
     }
 }
